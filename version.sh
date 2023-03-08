@@ -33,6 +33,18 @@ help(){
 \tDeletes all versions of a file under versioning'
 }
 
-if test $# -eq 1 -a "$1" = "--help";then
+add(){
+	cp "$1" ".version/$1.1"
+	cp "$1" ".version/$1.latest"
+}
+
+if ! test -d .version;then
+	echo 'Error! ".version" directory not found in current directory'
+	echo 'Enter "./version.sh --help" for more information'
+	exit 1;
+elif test $# -eq 1 -a "$1" = "--help";then
 	help
 fi
+
+add $1
+
