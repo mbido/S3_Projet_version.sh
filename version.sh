@@ -32,7 +32,6 @@ help(){
 ./version.sh rm FILE
 \tDeletes all versions of a file under versioning'
 }
-#test commentary
 add(){
 	cp "$1" ".version/$1.1"
 	cp "$1" ".version/$1.latest"
