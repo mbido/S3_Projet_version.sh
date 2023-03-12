@@ -42,31 +42,27 @@ add(){
 	elif ! test -d .version;then
 		mkdir .version
 	fi
-	cp "$1" ".version/$1.1"
-	cp "$1" ".version/$1.latest"
+	FILE=${1##*/}
+	cp "$1" ".version/$FILE.1"
+	cp "$1" ".version/$FILE.latest"
 }
 
 rm(){
-	if test $# -ne 1;then
-		# this test needs to be remove at the end !
-		echo "Error! wrong number of arguments. 1 argument expected but $# where given"
-		echo 'Enter "./version.sh --help" for more information.'
-		return 1; #using return because it would be a dev error and so no sys-call required
-	elif ! test -d .version;then
+	FILE=${1##*/}
+	if ! test -d .version;then
 		echo "Error! '.version' directory was not found"
 		exit 1;
-	elif ! ls ".version/$1.1" >/dev/null 2>&1;then
+	elif ! ls ".version/$FILE.1" >/dev/null 2>&1;then
 		echo "Error! unable to find $1 file in versioning"
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1;
 	fi
-
-	echo -n "Are you sure you want to delete '$1' from versioning ? "
+	echo -n "Are you sure you want to delete '$FILE' from versioning ? "
 	read RESP
 	RESP=$(echo $RESP | tr '[:upper:]' '[:lower:]')
 	if test "$RESP" = "yes" -o "$RESP" = "y" -o;then
-		/bin/rm ".version/$1."*
-		echo "'$1' is not under versioning anymore."
+		/bin/rm ".version/$FILE."*
+		echo "'$FILE' is not under versioning anymore."
 	else
 		echo "Nothing done."
 	fi
