@@ -33,17 +33,49 @@ help(){
 \tDeletes all versions of a file under versioning'
 }
 add(){
+	if test $# -ne 1;then
+		echo "Error! wrong number of arguments. 1 argument expected but $# where given"
+		echo 'Enter "./version.sh --help" for more information.'
+	elif ! test -f $1 -a -r $1;then
+		echo "Error! $1 is not a regular file or read permission is not granted."
+		echo 'Enter "./version.sh --help" for more information.'
+	elif ! test -d .version;then
+		mkdir .version
+	fi
 	cp "$1" ".version/$1.1"
 	cp "$1" ".version/$1.latest"
 }
 
-if ! test -d .version;then
-	echo 'Error! ".version" directory not found in current directory'
-	echo 'Enter "./version.sh --help" for more information'
-	exit 1;
-elif test $# -eq 1 -a "$1" = "--help";then
+rm(){
+	if test $# -ne 1;then
+		# this test needs to be remove at the end !
+		echo "Error! wrong number of arguments. 1 argument expected but $# where given"
+		echo 'Enter "./version.sh --help" for more information.'
+		return 1; #using return because it would be a dev error and so no sys-call required
+	elif ! test -d .version;then
+		echo "Error! '.version' directory was not found"
+		exit 1;
+	elif ! ls ".version/$1.1" >/dev/null 2>&1;then
+		echo "Error! unable to find $1 file in versioning"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1;
+	fi
+
+	echo -n "Are you sure you want to delete '$1' from versioning ? "
+	read RESP
+	RESP=$(echo $RESP | tr '[:upper:]' '[:lower:]')
+	if test "$RESP" = "yes" -o "$RESP" = "y" -o;then
+		/bin/rm ".version/$1."*
+		echo "'$1' is not under versioning anymore."
+	else
+		echo "Nothing done."
+	fi
+}
+
+
+if test $# -eq 1 -a "$1" = "--help";then
 	help
+	exit 0;
 fi
-
 add $1
-
+rm $1
