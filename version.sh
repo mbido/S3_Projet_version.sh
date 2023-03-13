@@ -33,10 +33,7 @@ help(){
 \tDeletes all versions of a file under versioning'
 }
 add(){
-	if test $# -ne 1;then
-		echo "Error! wrong number of arguments. 1 argument expected but $# where given"
-		echo 'Enter "./version.sh --help" for more information.'
-	elif ! test -f $1 -a -r $1;then
+	if ! test -f $1 -a -r $1;then
 		echo "Error! $1 is not a regular file or read permission is not granted."
 		echo 'Enter "./version.sh --help" for more information.'
 	elif ! test -d .version;then
@@ -137,9 +134,56 @@ checkout(){
 	fi
 }
 
-if test $# -eq 1 -a "$1" = "--help";then
+if test $# -eq 0;then
+	echo "Error! wrong number of arguments. 1 argument expected but $# where given"
+	echo 'Enter "./version.sh --help" for more information.'
+	exit 1;
+fi
+
+case "$1" in
+	"--help")
+	if test $# -ne 1;then
+		echo "Error! wrong number of arguments. 1 argument expected but $# where given"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1;
+	fi
 	help
-	exit 0;
+	;;
+	"add")
+	if test $# -ne 2;then
+		echo "Error! wrong number of arguments. 2 arguments expected but $# where given"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1;
+	fi
+	add $1 $2
+	;;
+	"commit")
+	if test $# -ne 2;then
+		echo "Error! wrong number of arguments. 2 arguments expected but $# where given"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1;
+	fi
+	commit $1 $2
+	;;
+	"diff")
+	if test $# -ne 1;then
+		echo "Error! wrong number of arguments. 1 argument expected but $# where given"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1;
+	fi
+	diff $1
+	;;
+	"checkout")
+	if test $# -eq 1;then
+		checkout $1
+	elif test $# -eq 2;then
+		checkout $1 $2
+	else
+		echo "Error! wrong number of arguments. 1 or 2 arguments expected but $# where given"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1;
+	fi
+	;;
 fi
 diff $1
 
