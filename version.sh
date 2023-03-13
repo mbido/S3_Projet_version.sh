@@ -85,8 +85,11 @@ commit(){
 	
 	#getting the version number :
 	VERSION=$(ls ".version/$FILE."* | wc -l)
+	
+	
 	diff -u ".version/$FILE.$((VERSION - 1))" "$1" > ".version/$FILE.$VERSION"
 	cp "$1" ".version/$FILE.latest"
+	echo "Committed a new version : $VERSION"
 }
 
 diff(){
@@ -101,6 +104,37 @@ diff(){
 	fi
 	
 	/bin/diff -u ".version/$FILE.latest" "$1"
+}
+
+checkout(){
+	FILE=${1##*/}
+	if ! test -d .version;then
+		echo "Error! '.version' directory was not found"
+		exit 1;
+	elif ! ls ".version/$FILE.1" >/dev/null 2>&1;then
+		echo "Error! unable to find '$FILE' file in versioning"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1;
+	elif test $# -eq 1;then
+		cp ".version/$FILE.latest" "$1"
+		echo "Checked out to the latest version"
+	else
+		#getting the version number :
+		VERSION=$(ls ".version/$FILE."* | wc -l)
+		
+		if test $2 -ge $VERSION;then
+			echo "Error! there is no version $2 in versioning"
+			echo 'Enter "./version.sh --help" for more information.'
+			exit 1;
+		fi  
+		
+		cp ".version/$FILE.1" "$1"
+		VAR=2
+		while test $VAR -le $2;do
+			patch -u "$1" ".version/$FILE.$VAR"
+		done
+		echo "Checked out version : $2"
+	fi
 }
 
 if test $# -eq 1 -a "$1" = "--help";then
