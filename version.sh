@@ -184,8 +184,7 @@ case "$1" in
 		exit 1;
 	fi
 	;;
-fi
-diff $1
+esac
 
 
 
