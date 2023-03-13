@@ -89,12 +89,25 @@ commit(){
 	cp "$1" ".version/$FILE.latest"
 }
 
+diff(){
+	FILE=${1##*/}
+	if ! test -d .version;then
+		echo "Error! '.version' directory was not found"
+		exit 1;
+	elif ! ls ".version/$FILE.1" >/dev/null 2>&1;then
+		echo "Error! unable to find '$FILE' file in versioning"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1;
+	fi
+	
+	/bin/diff -u ".version/$FILE.latest" "$1"
+}
 
 if test $# -eq 1 -a "$1" = "--help";then
 	help
 	exit 0;
 fi
-commit $1
+diff $1
 
 
 

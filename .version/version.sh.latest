@@ -32,19 +32,93 @@ help(){
 ./version.sh rm FILE
 \tDeletes all versions of a file under versioning'
 }
-
 add(){
-	cp "$1" ".version/$1.1"
-	cp "$1" ".version/$1.latest"
+	if test $# -ne 1;then
+		echo "Error! wrong number of arguments. 1 argument expected but $# where given"
+		echo 'Enter "./version.sh --help" for more information.'
+	elif ! test -f $1 -a -r $1;then
+		echo "Error! $1 is not a regular file or read permission is not granted."
+		echo 'Enter "./version.sh --help" for more information.'
+	elif ! test -d .version;then
+		mkdir .version
+	fi
+	FILE=${1##*/}
+	cp "$1" ".version/$FILE.1"
+	cp "$1" ".version/$FILE.latest"
 }
 
-if ! test -d .version;then
-	echo 'Error! ".version" directory not found in current directory'
-	echo 'Enter "./version.sh --help" for more information'
-	exit 1;
-elif test $# -eq 1 -a "$1" = "--help";then
-	help
-fi
+rm(){
+	FILE=${1##*/}
+	if ! test -d .version;then
+		echo "Error! '.version' directory was not found"
+		exit 1;
+	elif ! ls ".version/$FILE.1" >/dev/null 2>&1;then
+		echo "Error! unable to find '$FILE' file in versioning"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1;
+	fi
+	echo -n "Are you sure you want to delete '$FILE' from versioning ? "
+	read RESP
+	RESP=$(echo $RESP | tr '[:upper:]' '[:lower:]')
+	if test "$RESP" = "yes" -o "$RESP" = "y" -o;then
+		/bin/rm ".version/$FILE."*
+		echo "'$FILE' is not under versioning anymore."
+		rmdir .version 2>/dev/null
+	else
+		echo "Nothing done."
+	fi
+}
 
-add $1
+commit(){
+	FILE=${1##*/}
+	if ! test -d .version;then
+		echo "Error! '.version' directory was not found"
+		exit 1;
+	elif ! ls ".version/$FILE.1" >/dev/null 2>&1;then
+		echo "Error! unable to find '$FILE' file in versioning"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1;
+	fi
+	
+	#getting the version number :
+	VERSION=$(ls ".version/$FILE."* | wc -l)
+	diff -u ".version/$FILE.$((VERSION - 1))" "$1" > ".version/$FILE.$VERSION"
+	cp "$1" ".version/$FILE.latest"
+}
+
+
+if test $# -eq 1 -a "$1" = "--help";then
+	help
+	exit 0;
+fi
+commit $1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
