@@ -48,11 +48,11 @@ rm(){
 	FILE=${1##*/}
 	if ! test -d .version;then
 		echo "Error! '.version' directory was not found"
-		exit 1;
+		exit 1
 	elif ! ls ".version/$FILE.1" >/dev/null 2>&1;then
 		echo "Error! unable to find '$FILE' file in versioning"
 		echo 'Enter "./version.sh --help" for more information.'
-		exit 1;
+		exit 1
 	fi
 	echo -n "Are you sure you want to delete '$FILE' from versioning ? "
 	read RESP
@@ -70,21 +70,20 @@ commit(){
 	FILE=${1##*/}
 	if ! test -d .version;then
 		echo "Error! '.version' directory was not found"
-		exit 1;
+		exit 1
 	elif ! ls ".version/$FILE.1" >/dev/null 2>&1;then
 		echo "Error! unable to find '$FILE' file in versioning"
 		echo 'Enter "./version.sh --help" for more information.'
-		exit 1;
-	elif ! cmp ".version/$FILE.latest" "$1" 2>/dev/null;then
+		exit 1
+	elif cmp ".version/$FILE.latest" "$1" >/dev/null 2>&1;then
 		echo "Nothing done : '$FILE' already updated in versioning"
-		exit 0;
+		exit 0
 	fi
 	
 	#getting the version number :
 	VERSION=$(ls ".version/$FILE."* | wc -l)
 	
-	
-	diff -u ".version/$FILE.$((VERSION - 1))" "$1" > ".version/$FILE.$VERSION"
+	/bin/diff -u ".version/$FILE.$((VERSION - 1))" "$1" > ".version/$FILE.$VERSION"
 	cp "$1" ".version/$FILE.latest"
 	echo "Committed a new version : $VERSION"
 }
@@ -93,11 +92,11 @@ diff(){
 	FILE=${1##*/}
 	if ! test -d .version;then
 		echo "Error! '.version' directory was not found"
-		exit 1;
+		exit 1
 	elif ! ls ".version/$FILE.1" >/dev/null 2>&1;then
 		echo "Error! unable to find '$FILE' file in versioning"
 		echo 'Enter "./version.sh --help" for more information.'
-		exit 1;
+		exit 1
 	fi
 	
 	/bin/diff -u ".version/$FILE.latest" "$1"
@@ -107,11 +106,11 @@ checkout(){
 	FILE=${1##*/}
 	if ! test -d .version;then
 		echo "Error! '.version' directory was not found"
-		exit 1;
+		exit 1
 	elif ! ls ".version/$FILE.1" >/dev/null 2>&1;then
 		echo "Error! unable to find '$FILE' file in versioning"
 		echo 'Enter "./version.sh --help" for more information.'
-		exit 1;
+		exit 1
 	elif test $# -eq 1;then
 		cp ".version/$FILE.latest" "$1"
 		echo "Checked out to the latest version"
@@ -129,13 +128,14 @@ checkout(){
 		VAR=2
 		while test $VAR -le $2;do
 			patch -u "$1" ".version/$FILE.$VAR"
+			VAR=$((VAR + 1))
 		done
 		echo "Checked out version : $2"
 	fi
 }
 
 if test $# -eq 0;then
-	echo "Error! wrong number of arguments. 1 argument expected but $# where given"
+	echo "Error! no argument was given"
 	echo 'Enter "./version.sh --help" for more information.'
 	exit 1;
 fi
@@ -145,44 +145,57 @@ case "$1" in
 	if test $# -ne 1;then
 		echo "Error! wrong number of arguments. 1 argument expected but $# where given"
 		echo 'Enter "./version.sh --help" for more information.'
-		exit 1;
+		exit 1
 	fi
 	help
 	;;
 	"add")
-	if test $# -ne 2;then
-		echo "Error! wrong number of arguments. 2 arguments expected but $# where given"
+	if test $# -ne 3;then
+		echo "Error! wrong number of arguments. 3 arguments expected but $# where given"
 		echo 'Enter "./version.sh --help" for more information.'
-		exit 1;
+		exit 1
 	fi
-	add $1 $2
+	add $2 $3
 	;;
-	"commit")
+	"rm")
 	if test $# -ne 2;then
-		echo "Error! wrong number of arguments. 2 arguments expected but $# where given"
+		echo "Error! wrong number of arguments. 2 argument expected but $# where given"
 		echo 'Enter "./version.sh --help" for more information.'
-		exit 1;
+		exit 1
 	fi
-	commit $1 $2
+	rm $2
+	;;
+	"commit"|"ci")
+	if test $# -ne 3;then
+		echo "Error! wrong number of arguments. 3 arguments expected but $# where given"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1
+	fi
+	commit $2 $3
 	;;
 	"diff")
-	if test $# -ne 1;then
-		echo "Error! wrong number of arguments. 1 argument expected but $# where given"
+	if test $# -ne 2;then
+		echo "Error! wrong number of arguments. 2 argument expected but $# where given"
 		echo 'Enter "./version.sh --help" for more information.'
-		exit 1;
+		exit 1
 	fi
-	diff $1
+	diff $2
 	;;
-	"checkout")
-	if test $# -eq 1;then
-		checkout $1
-	elif test $# -eq 2;then
-		checkout $1 $2
+	"checkout"|"co")
+	if test $# -eq 2;then
+		checkout $2
+	elif test $# -eq 3;then
+		checkout $2 $3
 	else
-		echo "Error! wrong number of arguments. 1 or 2 arguments expected but $# where given"
+		echo "Error! wrong number of arguments. 2 or 3 arguments expected but $# where given"
 		echo 'Enter "./version.sh --help" for more information.'
-		exit 1;
+		exit 1
 	fi
+	;;
+	*)
+	echo "Error! '$1' is not a valid command"
+	echo 'Enter "./version.sh --help" for more information.'
+	exit 1
 	;;
 esac
 
