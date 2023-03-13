@@ -53,7 +53,7 @@ rm(){
 		echo "Error! '.version' directory was not found"
 		exit 1;
 	elif ! ls ".version/$FILE.1" >/dev/null 2>&1;then
-		echo "Error! unable to find $1 file in versioning"
+		echo "Error! unable to find '$FILE' file in versioning"
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1;
 	fi
@@ -63,9 +63,30 @@ rm(){
 	if test "$RESP" = "yes" -o "$RESP" = "y" -o;then
 		/bin/rm ".version/$FILE."*
 		echo "'$FILE' is not under versioning anymore."
+		rmdir .version 2>/dev/null
 	else
 		echo "Nothing done."
 	fi
+}
+
+commit(){
+	FILE=${1##*/}
+	if ! test -d .version;then
+		echo "Error! '.version' directory was not found"
+		exit 1;
+	elif ! ls ".version/$FILE.1" >/dev/null 2>&1;then
+		echo "Error! unable to find '$FILE' file in versioning"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1;
+	elif ! cmp ".version/$FILE.latest" "$1" 2>/dev/null;then
+		echo "Nothing done : '$FILE' already updated in versioning"
+		exit 0;
+	fi
+	
+	#getting the version number :
+	VERSION=$(ls ".version/$FILE."* | wc -l)
+	diff -u ".version/$FILE.$((VERSION - 1))" "$1" > ".version/$FILE.$VERSION"
+	cp "$1" ".version/$FILE.latest"
 }
 
 
@@ -73,5 +94,34 @@ if test $# -eq 1 -a "$1" = "--help";then
 	help
 	exit 0;
 fi
-add $1
-rm $1
+commit $1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
