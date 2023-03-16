@@ -161,11 +161,11 @@ log(){
 		echo "Error! '.version' directory was not found"
 		exit 1
 	elif ! ls ".version/$FILE.log" >/dev/null 2>&1;then
-		echo "Error! unable to find '$FILE' file in versioning"
+		echo "Error! unable to find '$FILE.log' file in versioning"
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1
 	fi
-	nl -i .version/$FILE/log
+	awk '{print NR" : "$0}' .version/$FILE.log
 }
 
 
@@ -289,17 +289,21 @@ case "$1" in
 	fi
 	reset $2 $3
 	;;
-	*)
-	echo "Error! '$1' is not a valid command"
-	echo 'Enter "./version.sh --help" for more information.'
-	exit 1
-	;;
+	
 	"log")
 	if test $# -ne 2;then
 		echo "Error! wrong number of arguments. 2 arguments expected but $# where given"
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1
 	fi
+	log $2
+	;;
+	*)
+	echo "Error! '$1' is not a valid command"
+	echo 'Enter "./version.sh --help" for more information.'
+	exit 1
+	;;
+	
 esac
 
 
