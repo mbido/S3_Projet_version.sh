@@ -33,15 +33,30 @@ help(){
 \tDeletes all versions of a file under versioning'
 }
 add(){
+	FILE=${1##*/}
 	if ! test -f $1 -a -r $1;then
 		echo "Error! $1 is not a regular file or read permission is not granted."
 		echo 'Enter "./version.sh --help" for more information.'
 	elif ! test -d .version;then
 		mkdir .version
 	fi
-	FILE=${1##*/}
+	COMMENT=$(sed -E 's/^ *//' | sed -E 's/ *$//') 
+	if test -n $COMMENT; then
+		echo "Error! $2 is empty"
+		echo 'Enter "./version.sh --help" for more information.'
+	elif echo "$str" | grep -q '\n'; then
+		echo "Error! $2 is not a one line commentary"
+		echo 'Enter "./version.sh --help" for more information.'
+	elif ! test -f ".version/$FILE.log"; then
+		cp "$COMMENT" ".version/$FILE.log"
+		
+	fi
+
+	
+	
 	cp "$1" ".version/$FILE.1"
 	cp "$1" ".version/$FILE.latest"
+
 }
 
 rm(){
@@ -134,6 +149,19 @@ checkout(){
 	fi
 }
 
+log(){
+	FILE=${1##*/}
+	if ! test -d .version;then
+		echo "Error! '.version' directory was not found"
+		exit 1
+	elif ! ls ".version/$FILE.log" >/dev/null 2>&1;then
+		echo "Error! unable to find '$FILE' file in versioning"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1
+	fi
+
+	
+}
 
 
 
@@ -184,7 +212,7 @@ if test $# -eq 0;then
 fi
 
 case "$1" in
-	"--help")
+	"--help|--h")
 	if test $# -ne 1;then
 		echo "Error! wrong number of arguments. 1 argument expected but $# where given"
 		echo 'Enter "./version.sh --help" for more information.'
