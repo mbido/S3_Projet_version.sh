@@ -40,20 +40,17 @@ add(){
 	elif ! test -d .version;then
 		mkdir .version
 	fi
-	COMMENT=$(sed -E 's/^ *//' | sed -E 's/ *$//') 
-	if test -n $COMMENT; then
+	COMMENT=$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//') 
+	if ! test -n $COMMENT; then
 		echo "Error! $2 is empty"
 		echo 'Enter "./version.sh --help" for more information.'
 	elif echo "$str" | grep -q '\n'; then
 		echo "Error! $2 is not a one line commentary"
 		echo 'Enter "./version.sh --help" for more information.'
 	elif ! test -f ".version/$FILE.log"; then
-		cp "$COMMENT" ".version/$FILE.log"
+		echo "$COMMENT" > ".version/$FILE.log"
 		
 	fi
-
-	
-	
 	cp "$1" ".version/$FILE.1"
 	cp "$1" ".version/$FILE.latest"
 
@@ -210,8 +207,6 @@ reset(){
 			echo "Nothing done."
 		fi
 	fi
-	
-	
 }
 
 
