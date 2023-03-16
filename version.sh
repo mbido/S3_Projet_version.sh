@@ -83,7 +83,7 @@ commit(){
 	#getting the version number :
 	VERSION=$(ls ".version/$FILE."* | wc -l)
 	
-	/bin/diff -u ".version/$FILE.$((VERSION - 1))" "$1" > ".version/$FILE.$VERSION"
+	/bin/diff -u ".version/$FILE.latest" "$1" > ".version/$FILE.$VERSION"
 	cp "$1" ".version/$FILE.latest"
 	echo "Committed a new version : $VERSION"
 }
@@ -108,7 +108,7 @@ checkout(){
 		echo "Error! '.version' directory was not found"
 		exit 1
 	elif ! ls ".version/$FILE.1" >/dev/null 2>&1;then
-		echo "Error! unable to find '$FILE' file in versioning"
+		echo "Error! unable to find '$FILE' file in versionings"
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1
 	elif test $# -eq 1;then
@@ -127,12 +127,55 @@ checkout(){
 		cp ".version/$FILE.1" "$1"
 		VAR=2
 		while test $VAR -le $2;do
-			patch -u "$1" ".version/$FILE.$VAR"
+			patch -u "$1" ".version/$FILE.$VAR" >/dev/null
 			VAR=$((VAR + 1))
 		done
 		echo "Checked out version : $2"
 	fi
 }
+
+
+
+
+reset(){
+	FILE=${1##*/}
+	if ! test -d .version;then
+		echo "Error! '.version' directory was not found"
+		exit 1
+	elif ! ls ".version/$FILE.1" >/dev/null 2>&1;then
+		echo "Error! unable to find '$FILE' file in versioning"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1
+	fi
+	
+	# getting the version number :
+	VERSION=$(ls ".version/$FILE."* | wc -l)
+	
+	if test $2 -ge $VERSION;then
+		echo "Error! there is no version $2 in versioning"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1;
+	fi
+	
+	# first we checkout the corresponding version
+	checkout $1 $2 >/dev/null
+	
+	# then we remove the most recent versions in the versioning 
+	VAR=$2
+	while test $VAR -lt $VERSION;do
+		/bin/rm ".version/$FILE.$VAR"
+		VAR=$((VAR + 1))
+	done
+	
+	# finaly we update the .latest from the versioning
+	cp "$1" ".version/$FILE.latest" 
+}
+
+
+
+
+
+
 
 if test $# -eq 0;then
 	echo "Error! no argument was given"
@@ -192,35 +235,20 @@ case "$1" in
 		exit 1
 	fi
 	;;
+	"reset")
+	if test $# -ne 3;then
+		echo "Error! wrong number of arguments. 3 arguments expected but $# where given"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1
+	fi
+	reset $2 $3
+	;;
 	*)
 	echo "Error! '$1' is not a valid command"
 	echo 'Enter "./version.sh --help" for more information.'
 	exit 1
 	;;
 esac
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
