@@ -40,7 +40,7 @@ add(){
 	elif ! test -d .version;then
 		mkdir .version
 	fi
-	COMMENT=$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//') 
+	COMMENT=$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//') 
 	if ! test -n $COMMENT; then
 		echo "Error! $2 is empty"
 		echo 'Enter "./version.sh --help" for more information.'
@@ -49,7 +49,6 @@ add(){
 		echo 'Enter "./version.sh --help" for more information.'
 	elif ! test -f ".version/$FILE.log"; then
 		echo "$COMMENT" > ".version/$FILE.log"
-		
 	fi
 	cp "$1" ".version/$FILE.1"
 	cp "$1" ".version/$FILE.latest"
@@ -90,6 +89,16 @@ commit(){
 	elif cmp ".version/$FILE.latest" "$1" >/dev/null 2>&1;then
 		echo "Nothing done : '$FILE' already updated in versioning"
 		exit 0
+	fi
+	COMMENT=$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//') 
+	if ! test -n $COMMENT; then
+		echo "Error! $2 is empty"
+		echo 'Enter "./version.sh --help" for more information.'
+	elif echo "$str" | grep -q '\n'; then
+		echo "Error! $2 is not a one line commentary"
+		echo 'Enter "./version.sh --help" for more information.'
+	elif ! test -f ".version/$FILE.log"; then
+		echo "$COMMENT" > ".version/$FILE.log"
 	fi
 	
 	#getting the version number :
@@ -156,8 +165,7 @@ log(){
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1
 	fi
-
-	
+	nl -i .version/$FILE/log
 }
 
 
@@ -222,7 +230,7 @@ if test $# -eq 0;then
 fi
 
 case "$1" in
-	"--help|--h")
+	"--help"|"--h")
 	if test $# -ne 1;then
 		echo "Error! wrong number of arguments. 1 argument expected but $# where given"
 		echo 'Enter "./version.sh --help" for more information.'
@@ -286,6 +294,12 @@ case "$1" in
 	echo 'Enter "./version.sh --help" for more information.'
 	exit 1
 	;;
+	"log")
+	if test $# -ne 2;then
+		echo "Error! wrong number of arguments. 2 arguments expected but $# where given"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1
+	fi
 esac
 
 
