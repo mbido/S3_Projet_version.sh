@@ -69,10 +69,10 @@ rm(){
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1
 	fi
-	echo -n "Are you sure you want to delete '$FILE' from versioning ? "
+	echo -n "Are you sure you want to delete '$FILE' from versioning ? (yes/no) "
 	read RESP
 	RESP=$(echo $RESP | tr '[:upper:]' '[:lower:]')
-	if test "$RESP" = "yes" -o "$RESP" = "y" -o;then
+	if test "$RESP" = "yes" -o "$RESP" = "y";then
 		/bin/rm ".version/$FILE."*
 		echo "'$FILE' is not under versioning anymore."
 		rmdir .version 2>/dev/null
@@ -183,20 +183,35 @@ reset(){
 		echo "Error! there is no version $2 in versioning"
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1;
+		
+	elif test $2 -eq $((VERSION - 1));then
+		checkout $1
+		exit 0;
+	else
+		echo -n "Are you sure you want to reset ’example.txt’ to version 2 ? (yes/no) "
+		read RESP
+		RESP=$(echo $RESP | tr '[:upper:]' '[:lower:]')
+		
+		if test "$RESP" = "yes" -o "$RESP" = "y";then
+			# first we checkout the corresponding version
+			checkout $1 $2 >/dev/null
+			
+			# then we remove the most recent versions in the versioning 
+			VAR=$((2 + 1))
+			while test $VAR -lt $VERSION;do
+				/bin/rm ".version/$FILE.$VAR"
+				VAR=$((VAR + 1))
+			done
+			
+			# finaly we update the .latest from the versioning
+			cp "$1" ".version/$FILE.latest" 
+		
+		else
+			echo "Nothing done."
+		fi
 	fi
 	
-	# first we checkout the corresponding version
-	checkout $1 $2 >/dev/null
 	
-	# then we remove the most recent versions in the versioning 
-	VAR=$2
-	while test $VAR -lt $VERSION;do
-		/bin/rm ".version/$FILE.$VAR"
-		VAR=$((VAR + 1))
-	done
-	
-	# finaly we update the .latest from the versioning
-	cp "$1" ".version/$FILE.latest" 
 }
 
 
