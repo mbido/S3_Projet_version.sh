@@ -33,7 +33,6 @@ help(){
 \tDeletes all versions of a file under versioning'
 }
 add(){
-	echo $#
 	FILE=${1##*/}
 	if ! test -f $1 -a -r $1;then
 		echo "Error! $1 is not a regular file or read permission is not granted."
@@ -41,17 +40,11 @@ add(){
 	elif ! test -d .version;then
 		mkdir .version
 	fi
-	echo $#
-	echo $1
-	echo $2
-	echo $3
-	echo $4
 	COMMENT=$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//') 
-	echo $COMMENT
-	if ! test -n $COMMENT; then
-		echo "Error! $2 is empty"
+	if ! test -n "$COMMENT";then
+		echo "Error! $COMMENT is empty"
 		echo 'Enter "./version.sh --help" for more information.'
-	elif echo "$str" | grep -q '\n'; then
+	elif echo "$str" | grep -q '\n';then
 		echo "Error! $2 is not a one line commentary"
 		echo 'Enter "./version.sh --help" for more information.'
 	elif ! test -f ".version/$FILE.log"; then
@@ -59,7 +52,6 @@ add(){
 	fi
 	cp "$1" ".version/$FILE.1"
 	cp "$1" ".version/$FILE.latest"
-
 }
 
 rm(){
@@ -98,14 +90,14 @@ commit(){
 		exit 0
 	fi
 	COMMENT=$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//') 
-	if ! test -n $COMMENT; then
-		echo "Error! $2 is empty"
+	if ! test -n "$COMMENT";then
+		echo "Error! $COMMENT is empty"
 		echo 'Enter "./version.sh --help" for more information.'
-	elif echo "$str" | grep -q '\n'; then
+	elif echo "$str" | grep -q '\n';then
 		echo "Error! $2 is not a one line commentary"
 		echo 'Enter "./version.sh --help" for more information.'
-	elif ! test -f ".version/$FILE.log"; then
-		echo "$COMMENT" > ".version/$FILE.log"
+	else
+		echo "$COMMENT" >> ".version/$FILE.log"
 	fi
 	
 	#getting the version number :
@@ -246,13 +238,12 @@ case "$1" in
 	help
 	;;
 	"add")
-	echo $#
 	if test $# -ne 3;then
 		echo "Error! wrong number of arguments. 3 arguments expected but $# where given"
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1
 	fi
-	add $2 $3
+	add $2 "$3"
 	;;
 	"rm")
 	if test $# -ne 2;then
@@ -268,7 +259,7 @@ case "$1" in
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1
 	fi
-	commit $2 $3
+	commit $2 "$3"
 	;;
 	"diff")
 	if test $# -ne 2;then
