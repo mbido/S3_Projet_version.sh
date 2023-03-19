@@ -101,7 +101,7 @@ commit(){
 	fi
 	
 	#getting the version number :
-	VERSION=$(ls ".version/$FILE."* | wc -l)
+	VERSION=$(($(ls ".version/$FILE."* | wc -l) -1))
 	
 	/bin/diff -u ".version/$FILE.latest" "$1" > ".version/$FILE.$VERSION"
 	cp "$1" ".version/$FILE.latest"
