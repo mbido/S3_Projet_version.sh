@@ -40,7 +40,8 @@ add(){
 	elif ! test -d .version;then
 		mkdir .version
 	fi
-	COMMENT=$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//') 
+	date=$(date -R)
+	COMMENT="$date '$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//')'"
 	if ! test -n "$COMMENT";then
 		echo "Error! $COMMENT is empty"
 		echo 'Enter "./version.sh --help" for more information.'
@@ -89,7 +90,8 @@ commit(){
 		echo "Nothing done : '$FILE' already updated in versioning"
 		exit 0
 	fi
-	COMMENT=$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//') 
+	date=$(date -R)
+	COMMENT="$date '$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//')'"
 	if ! test -n "$COMMENT";then
 		echo "Error! $COMMENT is empty"
 		echo 'Enter "./version.sh --help" for more information.'
