@@ -42,12 +42,14 @@ add() {
 	fi
 	date=$(date -R)
 	COMMENT="$date '$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//')'"
-	if ! test -n "$COMMENT"; then
-		echo "Error! $COMMENT is empty"
+	if ! test -n "$2"; then
+		echo "Error! commentary is empty"
 		echo 'Enter "./version.sh --help" for more information.'
-	elif echo "$str" | grep -q '\n'; then
+		exit 1
+	elif [ $(echo -n "$2" | wc -l) -eq 1 ]; then
 		echo "Error! $2 is not a one line commentary"
 		echo 'Enter "./version.sh --help" for more information.'
+		exit 1
 	elif ! test -f ".version/$FILE.log"; then
 		echo "$COMMENT" >".version/$FILE.log"
 	fi
@@ -95,9 +97,11 @@ commit() {
 	if ! test -n "$COMMENT"; then
 		echo "Error! $COMMENT is empty"
 		echo 'Enter "./version.sh --help" for more information.'
-	elif echo "$str" | grep -q '\n'; then
+		exit 1
+	elif [ $(echo -n "$2" | wc -l) -eq 1 ]; then
 		echo "Error! $2 is not a one line commentary"
 		echo 'Enter "./version.sh --help" for more information.'
+		exit 1
 	else
 		echo "$COMMENT" >>".version/$FILE.log"
 	fi
@@ -243,10 +247,14 @@ amend() {
 	if test "$2" != "$latest_comment"; then
 		date=$(date -R)
 		NEW_COMMENT="$date '$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//')'"
-		sed -i '$ d' .version/$FILE.log
-		echo "$NEW_COMMENT" >>.version/$FILE.log
-		echo "latest comment amended"
-		TRY=1
+		if echo "$NEW_COMMENT" | grep -q '\n'; then
+			echo "Error! $NEW_COMMENT is not a one line commentary"
+		else
+			sed -i '$ d' .version/$FILE.log
+			echo "$NEW_COMMENT" >>.version/$FILE.log
+			echo "latest comment amended"
+			TRY=1
+		fi
 	fi
 	if test $TRY -eq 0;then
 		echo "no change to amend"
