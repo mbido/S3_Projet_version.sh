@@ -33,6 +33,7 @@ help(){
 \tDeletes all versions of a file under versioning'
 }
 add(){
+	echo $#
 	FILE=${1##*/}
 	if ! test -f $1 -a -r $1;then
 		echo "Error! $1 is not a regular file or read permission is not granted."
@@ -40,7 +41,13 @@ add(){
 	elif ! test -d .version;then
 		mkdir .version
 	fi
+	echo $#
+	echo $1
+	echo $2
+	echo $3
+	echo $4
 	COMMENT=$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//') 
+	echo $COMMENT
 	if ! test -n $COMMENT; then
 		echo "Error! $2 is empty"
 		echo 'Enter "./version.sh --help" for more information.'
@@ -239,6 +246,7 @@ case "$1" in
 	help
 	;;
 	"add")
+	echo $#
 	if test $# -ne 3;then
 		echo "Error! wrong number of arguments. 3 arguments expected but $# where given"
 		echo 'Enter "./version.sh --help" for more information.'
