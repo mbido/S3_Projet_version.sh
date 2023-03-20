@@ -1,5 +1,49 @@
 #!/bin/dash
 
+# functions for error's managment
+
+nbArgError(){
+	# $1 -> number of arguments expected
+	# $2 -> number of arguments given
+	echo "Error! wrong number of arguments. $1 argument expected but $2 where given"
+	echo 'Enter "./version.sh --help" for more information.'
+	exit 1
+}
+
+notRegularFileError(){
+	# $1 -> file name
+	echo "Error! $1 is not a regular file or read permission is not granted."
+	echo 'Enter "./version.sh --help" for more information.'
+	exit 1
+}
+
+emptyCommentError(){
+	echo "Error! commentary is empty"
+	echo 'Enter "./version.sh --help" for more information.'
+	exit 1
+}
+
+notInlineCommentError(){
+	# $1 -> string
+	echo "Error! $1 is not a one line commentary"
+	echo 'Enter "./version.sh --help" for more information.'
+	exit 1
+}
+
+noversioningDirectoryError(){
+	echo "Error! '.version' directory was not found"
+	exit 1
+}
+
+noFileInVersioningError(){
+	# $1 -> file name that should have been in versioning
+	echo "Error! unable to find '$1' file in versioning"
+	echo 'Enter "./version.sh --help" for more information.'
+	exit 1
+}
+
+# main functions
+
 help() {
 	echo 'Usage:
 \t./version.sh --help
@@ -34,26 +78,20 @@ help() {
 }
 add() {
 	FILE=${1##*/}
-	if test $# -ne 2; then
-		echo "Error! wrong number of arguments. 3 argument expected but $((# + 1)) where given"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
-	elif ! test -f $1 -a -r $1; then
-		echo "Error! $1 is not a regular file or read permission is not granted."
-		echo 'Enter "./version.sh --help" for more information.'
-	elif ! test -d .version; then
+	if ! test -f $1 -a -r $1; then #EXIT
+		notRegularFileError $1
+	elif ! test -d .version; then #EXIT
 		mkdir .version
+	elif ls ".version/$FILE.1" >/dev/null 2>&1; then #EXIT
+		echo "Nothing was done : '$1' file already present in versioning"
+		exit 0
 	fi
 	date=$(date -R)
 	COMMENT=$(echo $2 | sed -E 's/\t//g' | sed -E 's/^ *//' | sed -E 's/ *$//')
-	if ! test -n "$COMMENT"; then
-		echo "Error! commentary is empty"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
-	elif test $(echo -n "$2" | wc -l) -eq 1; then
-		echo "Error! $2 is not a one line commentary"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
+	if ! test -n "$COMMENT"; then #EXIT
+		emptyCommentError
+	elif test $(echo -n "$2" | wc -l) -eq 1; then #EXIT
+		notInlineCommentError $2
 	elif ! test -f ".version/$FILE.log"; then
 		COMMENT="$date '$COMMENT'"
 		echo "$COMMENT" >".version/$FILE.log"
@@ -64,13 +102,10 @@ add() {
 
 rmInternal() {
 	FILE=${1##*/}
-	if ! test -d .version; then
-		echo "Error! '.version' directory was not found"
-		exit 1
-	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then
-		echo "Error! unable to find '$FILE' file in versioning"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
+	if ! test -d .version; then #EXIT
+		noversioningDirectoryError
+	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then #EXIT
+		noFileInVersioningError $FILE
 	fi
 	echo -n "Are you sure you want to delete '$FILE' from versioning ? (yes/no) "
 	read RESP
@@ -86,31 +121,20 @@ rmInternal() {
 
 commit() {
 	FILE=${1##*/}
-	if test $# -ne 2; then
-		echo "Error! wrong number of arguments. 3 argument expected but $((# + 1)) where given"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
-	elif ! test -d .version; then
-		echo "Error! '.version' directory was not found"
-		exit 1
-	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then
-		echo "Error! unable to find '$FILE' file in versioning"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
+	if ! test -d .version; then #EXIT
+		noversioningDirectoryError
+	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then #EXIT
+		noFileInVersioningError $FILE
 	elif cmp ".version/$FILE.latest" "$1" >/dev/null 2>&1; then
 		echo "Nothing done : '$FILE' already updated in versioning"
 		exit 0
 	fi
 	date=$(date -R)
 	COMMENT=$(echo $2 | sed -E 's/\t//g' | sed -E 's/^ *//' | sed -E 's/ *$//')
-	if ! test -n "$COMMENT"; then
-		echo "Error! commentary is empty"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
-	elif test $(echo -n "$2" | wc -l) -eq 1; then
-		echo "Error! $2 is not a one line commentary"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
+	if ! test -n "$COMMENT"; then #EXIT
+		emptyCommentError
+	elif test $(echo -n "$2" | wc -l) -eq 1; then #EXIT
+		notInlineCommentError $2
 	else
 		COMMENT="$date '$COMMENT'"
 		echo "$COMMENT" >> ".version/$FILE.log"
@@ -126,13 +150,10 @@ commit() {
 
 diffInternal() {
 	FILE=${1##*/}
-	if ! test -d .version; then
-		echo "Error! '.version' directory was not found"
-		exit 1
-	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then
-		echo "Error! unable to find '$FILE' file in versioning"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
+	if ! test -d .version; then #EXIT
+		noversioningDirectoryError
+	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then #EXIT
+		noFileInVersioningError $FILE
 	fi
 
 	diff -u ".version/$FILE.latest" "$1"
@@ -140,13 +161,10 @@ diffInternal() {
 
 checkout() {
 	FILE=${1##*/}
-	if ! test -d .version; then
-		echo "Error! '.version' directory was not found"
-		exit 1
-	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then
-		echo "Error! unable to find '$FILE' file in versionings"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
+	if ! test -d .version; then #EXIT
+		noversioningDirectoryError
+	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then #EXIT
+		noFileInVersioningError $FILE
 	elif test $# -eq 1; then
 		cp ".version/$FILE.latest" "$1"
 		echo "Checked out to the latest version"
@@ -154,10 +172,8 @@ checkout() {
 		#getting the version number :
 		VERSION=$(($(ls ".version/$FILE."* | wc -l) - 2))
 
-		if test $2 -gt $VERSION; then
-			echo "Error! there is no version $2 in versioning"
-			echo 'Enter "./version.sh --help" for more information.'
-			exit 1
+		if test $2 -gt $VERSION; then #EXIT
+			noFileInVersioningError $2
 		fi
 
 		cp ".version/$FILE.1" "$1"
@@ -172,35 +188,27 @@ checkout() {
 
 log() {
 	FILE=${1##*/}
-	if ! test -d .version; then
-		echo "Error! '.version' directory was not found"
-		exit 1
-	elif ! ls ".version/$FILE.log" >/dev/null 2>&1; then
-		echo "Error! unable to find '$FILE.log' file in versioning"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
+	if ! test -d .version; then #EXIT
+		noversioningDirectoryError
+	elif ! ls ".version/$FILE.log" >/dev/null 2>&1; then #EXIT
+		noFileInVersioningError $FILE
 	fi
 	awk '{print NR" : "$0}' .version/$FILE.log
 }
 
 reset() {
 	FILE=${1##*/}
-	if ! test -d .version; then
-		echo "Error! '.version' directory was not found"
-		exit 1
-	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then
-		echo "Error! unable to find '$FILE' file in versioning"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
+	if ! test -d .version; then #EXIT
+		noversioningDirectoryError
+	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then #EXIT
+		noFileInVersioningError $FILE
 	fi
 
 	# getting the version number :
 	VERSION=$(($(ls ".version/$FILE."* | wc -l) - 2))
 
-	if test $2 -gt $VERSION; then
-		echo "Error! there is no version $2 in versioning"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
+	if test $2 -gt $VERSION; then #EXIT
+		noFileInVersioningError $2
 
 	elif test $2 -eq $VERSION; then
 		checkout $1
@@ -236,13 +244,10 @@ reset() {
 amend() {
 	FILE=${1##*/}
 	TRY=0
-	if ! test -d .version; then
-		echo "Error! '.version' directory was not found"
-		exit 1
-	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then
-		echo "Error! unable to find '$FILE' file in versioning"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
+	if ! test -d .version; then #EXIT
+		noversioningDirectoryError
+	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then #EXIT
+		noFileInVersioningError $FILE
 	fi
 	COMMENT="$2"
 	# getting the number of the latest version of the file and comment
@@ -259,13 +264,10 @@ amend() {
 	if test "$2" != "$latest_comment"; then
 		date=$(date -R)
 		NEW_COMMENT=$(echo $2 | sed -E 's/\t//g' | sed -E 's/^ *//' | sed -E 's/ *$//')
-		if test $(echo "$NEW_COMMENT" | wc -l) -gt 1; then
-			echo "Error! $NEW_COMMENT is not a one line commentary"
-			exit 1
+		if test $(echo "$NEW_COMMENT" | wc -l) -gt 1; then #EXIT
+			notInlineCommentError $NEW_COMMENT
 		elif ! test -n "$NEW_COMMENT"; then
-			echo "Error! commentary is empty"
-			echo 'Enter "./version.sh --help" for more information.'
-			exit 1
+			emptyCommentError
 		fi
 		sed -i '$ d' .version/$FILE.log
 		NEW_COMMENT="$date '$NEW_COMMENT'"
@@ -289,42 +291,32 @@ fi
 
 case "$1" in
 "--help" | "--h")
-	if test $# -ne 1; then
-		echo "Error! wrong number of arguments. 1 argument expected but $# where given"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
+	if test $# -ne 1; then #EXIT
+		nbArgError 1 $#
 	fi
 	help
 	;;
 "add")
-	if test $# -ne 3; then
-		echo "Error! wrong number of arguments. 3 arguments expected but $# where given"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
+	if test $# -ne 3; then #EXIT
+		nbArgError 3 $#
 	fi
 	add $2 "$3"
 	;;
 "rm")
-	if test $# -ne 2; then
-		echo "Error! wrong number of arguments. 2 argument expected but $# where given"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
+	if test $# -ne 2; then #EXIT
+		nbArgError 2 $#
 	fi
 	rmInternal $2
 	;;
 "commit" | "ci")
-	if test $# -ne 3; then
-		echo "Error! wrong number of arguments. 3 arguments expected but $# where given"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
+	if test $# -ne 3; then #EXIT
+		nbArgError 3 $#
 	fi
 	commit $2 "$3"
 	;;
 "diff")
-	if test $# -ne 2; then
-		echo "Error! wrong number of arguments. 2 argument expected but $# where given"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
+	if test $# -ne 2; then #EXIT
+		nbArgError 2 $#
 	fi
 	diffInternal $2
 	;;
@@ -340,27 +332,21 @@ case "$1" in
 	fi
 	;;
 "reset")
-	if test $# -ne 3; then
-		echo "Error! wrong number of arguments. 3 arguments expected but $# where given"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
+	if test $# -ne 3; then #EXIT
+		nbArgError 3 $#
 	fi
 	reset $2 $3
 	;;
 
 "log")
-	if test $# -ne 2; then
-		echo "Error! wrong number of arguments. 2 arguments expected but $# where given"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
+	if test $# -ne 2; then #EXIT
+		nbArgError 2 $#
 	fi
 	log $2
 	;;
 "amend")
-	if test $# -ne 3; then
-		echo "Error! wrong number of arguments. 3 arguments expected but $# where given"
-		echo 'Enter "./version.sh --help" for more information.'
-		exit 1
+	if test $# -ne 3; then #EXIT
+		nbArgError 3 $#
 	fi
 	amend $2 "$3"
 	;;
