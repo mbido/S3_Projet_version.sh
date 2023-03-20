@@ -34,23 +34,29 @@ help() {
 }
 add() {
 	FILE=${1##*/}
-	if ! test -f $1 -a -r $1; then
+	if test $# -ne 2; then
+		echo "Error! wrong number of arguments. 3 argument expected but $((# + 1)) where given"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1
+	elif ! test -f $1 -a -r $1; then
 		echo "Error! $1 is not a regular file or read permission is not granted."
 		echo 'Enter "./version.sh --help" for more information.'
 	elif ! test -d .version; then
 		mkdir .version
 	fi
 	date=$(date -R)
-	COMMENT="$date '$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//')'"
+	COMMENT=$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//')
+	echo "'$2'"
 	if ! test -n "$2"; then
 		echo "Error! commentary is empty"
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1
-	elif [ $(echo -n "$2" | wc -l) -eq 1 ]; then
+	elif test $(echo -n "$2" | wc -l) -eq 1; then
 		echo "Error! $2 is not a one line commentary"
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1
 	elif ! test -f ".version/$FILE.log"; then
+		COMMENT="$date '$COMMENT'"
 		echo "$COMMENT" >".version/$FILE.log"
 	fi
 	cp "$1" ".version/$FILE.1"
@@ -81,7 +87,11 @@ rmInternal() {
 
 commit() {
 	FILE=${1##*/}
-	if ! test -d .version; then
+	if test $# -ne 2; then
+		echo "Error! wrong number of arguments. 3 argument expected but $((# + 1)) where given"
+		echo 'Enter "./version.sh --help" for more information.'
+		exit 1
+	elif ! test -d .version; then
 		echo "Error! '.version' directory was not found"
 		exit 1
 	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then
@@ -93,20 +103,21 @@ commit() {
 		exit 0
 	fi
 	date=$(date -R)
-	COMMENT="$date '$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//')'"
+	COMMENT=$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//')
 	if ! test -n "$COMMENT"; then
 		echo "Error! $COMMENT is empty"
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1
-	elif [ $(echo -n "$2" | wc -l) -eq 1 ]; then
+	elif test $(echo -n "$2" | wc -l) -eq 1; then
 		echo "Error! $2 is not a one line commentary"
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1
 	else
-		echo "$COMMENT" >>".version/$FILE.log"
+		COMMENT="$date '$COMMENT'"
+		echo "$COMMENT" >> ".version/$FILE.log"
 	fi
 
-	#getting the version number :
+	#getting the NEW version number :
 	VERSION=$(($(ls ".version/$FILE."* | wc -l) - 1))
 
 	diff -u ".version/$FILE.latest" "$1" >".version/$FILE.$VERSION"
@@ -142,9 +153,9 @@ checkout() {
 		echo "Checked out to the latest version"
 	else
 		#getting the version number :
-		VERSION=$(ls ".version/$FILE."* | wc -l)
+		VERSION=$(($(ls ".version/$FILE."* | wc -l) - 2))
 
-		if test $2 -ge $VERSION; then
+		if test $2 -gt $VERSION; then
 			echo "Error! there is no version $2 in versioning"
 			echo 'Enter "./version.sh --help" for more information.'
 			exit 1
