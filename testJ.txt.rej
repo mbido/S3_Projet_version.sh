@@ -1,0 +1,8 @@
+--- testJ.txt.latest	2023-03-20 19:03:12.534312316 +0100
++++ testJ.txt	2023-03-20 19:03:23.754367168 +0100
+@@ -3,4 +3,5 @@
+ commit
+ amended for all
+ do it try it it gfdgfd.
+-version3+version3
++version4

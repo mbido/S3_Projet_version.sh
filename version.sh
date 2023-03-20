@@ -57,7 +57,7 @@ add() {
 	cp "$1" ".version/$FILE.latest"
 }
 
-rm() {
+rmInternal() {
 	FILE=${1##*/}
 	if ! test -d .version; then
 		echo "Error! '.version' directory was not found"
@@ -71,7 +71,7 @@ rm() {
 	read RESP
 	RESP=$(echo $RESP | tr '[:upper:]' '[:lower:]')
 	if test "$RESP" = "yes" -o "$RESP" = "y"; then
-		/bin/rm ".version/$FILE."*
+		rm ".version/$FILE."*
 		echo "'$FILE' is not under versioning anymore."
 		rmdir .version 2>/dev/null
 	else
@@ -109,12 +109,12 @@ commit() {
 	#getting the version number :
 	VERSION=$(($(ls ".version/$FILE."* | wc -l) - 1))
 
-	/bin/diff -u ".version/$FILE.latest" "$1" >".version/$FILE.$VERSION"
+	diff -u ".version/$FILE.latest" "$1" >".version/$FILE.$VERSION"
 	cp "$1" ".version/$FILE.latest"
 	echo "Committed a new version : $VERSION"
 }
 
-diff() {
+diffInternal() {
 	FILE=${1##*/}
 	if ! test -d .version; then
 		echo "Error! '.version' directory was not found"
@@ -125,7 +125,7 @@ diff() {
 		exit 1
 	fi
 
-	/bin/diff -u ".version/$FILE.latest" "$1"
+	diff -u ".version/$FILE.latest" "$1"
 }
 
 checkout() {
@@ -185,35 +185,38 @@ reset() {
 	fi
 
 	# getting the version number :
-	VERSION=$(ls ".version/$FILE."* | wc -l)
+	VERSION=$(($(ls ".version/$FILE."* | wc -l) - 2))
 
-	if test $2 -ge $VERSION; then
+	if test $2 -gt $VERSION; then
 		echo "Error! there is no version $2 in versioning"
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1
 
-	elif test $2 -eq $((VERSION - 1)); then
+	elif test $2 -eq $VERSION; then
 		checkout $1
 		exit 0
 	else
-		echo -n "Are you sure you want to reset ’example.txt’ to version 2 ? (yes/no) "
+		echo -n "Are you sure you want to reset ’$1’ to version $2 ? (yes/no) "
 		read RESP
+
+		#formating the answer
 		RESP=$(echo $RESP | tr '[:upper:]' '[:lower:]')
 
 		if test "$RESP" = "yes" -o "$RESP" = "y"; then
-			# first we checkout the corresponding version
-			checkout $1 $2 >/dev/null
-
-			# then we remove the most recent versions in the versioning
-			VAR=$((2 + 1))
-			while test $VAR -lt $VERSION; do
-				/bin/rm ".version/$FILE.$VAR"
+			# first we remove the more recent versions in the versioning than the one we want
+			VAR=$2
+			VAR=$((VAR + 1))
+			while test $VAR -le $VERSION; do
+				rm ".version/$FILE.$VAR"
 				VAR=$((VAR + 1))
 			done
 
+			# then we checkout the corresponding version
+			checkout $1 $2 >/dev/null
+
 			# finaly we update the .latest from the versioning
 			cp "$1" ".version/$FILE.latest"
-
+			echo "Reset to version: $2"
 		else
 			echo "Nothing done."
 		fi
@@ -293,7 +296,7 @@ case "$1" in
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1
 	fi
-	rm $2
+	rmInternal $2
 	;;
 "commit" | "ci")
 	if test $# -ne 3; then
@@ -309,7 +312,7 @@ case "$1" in
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1
 	fi
-	diff $2
+	diffInternal $2
 	;;
 "checkout" | "co")
 	if test $# -eq 2; then
