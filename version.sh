@@ -45,9 +45,8 @@ add() {
 		mkdir .version
 	fi
 	date=$(date -R)
-	COMMENT=$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//')
-	echo "'$2'"
-	if ! test -n "$2"; then
+	COMMENT=$(echo $2 | sed -E 's/\t//g' | sed -E 's/^ *//' | sed -E 's/ *$//')
+	if ! test -n "$COMMENT"; then
 		echo "Error! commentary is empty"
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1
@@ -103,9 +102,9 @@ commit() {
 		exit 0
 	fi
 	date=$(date -R)
-	COMMENT=$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//')
+	COMMENT=$(echo $2 | sed -E 's/\t//g' | sed -E 's/^ *//' | sed -E 's/ *$//')
 	if ! test -n "$COMMENT"; then
-		echo "Error! $COMMENT is empty"
+		echo "Error! commentary is empty"
 		echo 'Enter "./version.sh --help" for more information.'
 		exit 1
 	elif test $(echo -n "$2" | wc -l) -eq 1; then
@@ -255,20 +254,24 @@ amend() {
 	if ! cmp -s "$1" "$latest_version"; then
 		cp "$1" "$latest_version"
 		cp "$1" ".version/$FILE.latest"
-		echo "Latest version amended : $latest_version_number"
 		TRY=1
 	fi
 	if test "$2" != "$latest_comment"; then
 		date=$(date -R)
-		NEW_COMMENT="$date '$(echo $2 | sed -E 's/^ *//' | sed -E 's/ *$//')'"
-		if echo "$NEW_COMMENT" | grep -q '\n'; then
+		NEW_COMMENT=$(echo $2 | sed -E 's/\t//g' | sed -E 's/^ *//' | sed -E 's/ *$//')
+		if test $(echo "$NEW_COMMENT" | wc -l) -gt 1; then
 			echo "Error! $NEW_COMMENT is not a one line commentary"
-		else
-			sed -i '$ d' .version/$FILE.log
-			echo "$NEW_COMMENT" >>.version/$FILE.log
-			echo "latest comment amended"
-			TRY=1
+			exit 1
+		elif ! test -n "$NEW_COMMENT"; then
+			echo "Error! commentary is empty"
+			echo 'Enter "./version.sh --help" for more information.'
+			exit 1
 		fi
+		sed -i '$ d' .version/$FILE.log
+		NEW_COMMENT="$date '$NEW_COMMENT'"
+		echo "$NEW_COMMENT" >>.version/$FILE.log
+		echo "Latest version amended : $latest_version_number"
+		TRY=1
 	fi
 	if test $TRY -eq 0;then
 		echo "no change to amend"
