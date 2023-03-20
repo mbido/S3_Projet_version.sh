@@ -1,7 +1,8 @@
 #!/bin/dash
 
-# functions for error's managment
-
+#----------------------------------------------------------------------------
+# 						functions for error's managment
+#----------------------------------------------------------------------------
 
 # inform that a wrong number of arguments whas given 
 # then exit
@@ -56,7 +57,10 @@ noFileInVersioningError(){
 	exit 1
 }
 
-# main functions
+#----------------------------------------------------------------------------
+# 							    main functions
+#----------------------------------------------------------------------------
+
 
 # display on its standard output the man page of the version.sh command
 help() {
@@ -101,7 +105,7 @@ help() {
 # 	$1 -> the file in question
 # 	$2 -> the comment in question
 add() {
-	FILE=${1##*/}
+	FILE=${1##*/} # allows to get the file name with its path given by taking everything after the last "/"
 	if ! test -f $1 -a -r $1; then #EXIT
 		notRegularFileError $1
 	elif ! test -d .version; then #EXIT
@@ -111,15 +115,20 @@ add() {
 		exit 0
 	fi
 	date=$(date -R)
+
+	# format the comment to remove every spaces and tabs 
 	COMMENT=$(echo $2 | sed -E 's/\t//g' | sed -E 's/^ *//' | sed -E 's/ *$//')
+
 	if ! test -n "$COMMENT"; then #EXIT
 		emptyCommentError
 	elif test $(echo -n "$2" | wc -l) -eq 1; then #EXIT
 		notInlineCommentError $2
-	elif ! test -f ".version/$FILE.log"; then
+	elif ! test -f ".version/$FILE.log"; then # setting up the log file
 		COMMENT="$date '$COMMENT'"
 		echo "$COMMENT" >".version/$FILE.log"
 	fi
+
+	# setting up the versioning
 	cp "$1" ".version/$FILE.1"
 	cp "$1" ".version/$FILE.latest"
 }
@@ -129,7 +138,7 @@ add() {
 # the file need to exist in versioning
 #
 #	$1 -> the file in question
-rmInternal() {
+rmInternal() { # the function's name is't "diff" because of the existing one : that can causes errors in the program
 	FILE=${1##*/}
 	if ! test -d .version; then #EXIT
 		noVersioningDirectoryError
@@ -139,11 +148,11 @@ rmInternal() {
 	echo -n "Are you sure you want to delete '$FILE' from versioning ? (yes/no) "
 	read RESP
 	RESP=$(echo $RESP | tr '[:upper:]' '[:lower:]')
-	if test "$RESP" = "yes" -o "$RESP" = "y"; then
+	if test "$RESP" = "yes" -o "$RESP" = "y"; then # removing every file's versions
 		rm ".version/$FILE."*
 		echo "'$FILE' is not under versioning anymore."
-		rmdir .version 2>/dev/null
-	else
+		rmdir .version 2>/dev/null # usefull for not having to test either the directory exist or not
+	else # canceling
 		echo "Nothing done."
 	fi
 }
@@ -174,7 +183,7 @@ commit() {
 		notInlineCommentError $2
 	else
 		COMMENT="$date '$COMMENT'"
-		echo "$COMMENT" >> ".version/$FILE.log"
+		echo "$COMMENT" >> ".version/$FILE.log" # adding the log in the log file with append method
 	fi
 
 	#getting the NEW version number :
@@ -190,7 +199,7 @@ commit() {
 # the file need to exist in versioning
 #
 # 	$1 -> the file in question
-diffInternal() {
+diffInternal() { # the function's name isn't "diff" because of the existing one : that can causes errors in the program
 	FILE=${1##*/}
 	if ! test -d .version; then #EXIT
 		noVersioningDirectoryError
@@ -226,6 +235,8 @@ checkout() {
 			noFileInVersioningError $2
 		fi
 
+		# to get to a version, we copy the first version witch is not a patch but the copy
+		# of the first version of the file and then we patch it until the version asked
 		cp ".version/$FILE.1" "$1"
 		VAR=2
 		while test $VAR -le $2; do
@@ -266,14 +277,15 @@ reset() {
 		noFileInVersioningError $FILE
 	fi
 
-	# getting the version number :
-	VERSION=$(($(ls ".version/$FILE."* | wc -l) - 2))
+	# getting the latest version number :
+	VERSION=$(($(ls ".version/$FILE."* | wc -l) - 2)) 
 
 	if test $2 -gt $VERSION; then #EXIT
 		noFileInVersioningError $2
 
 	elif test $2 -eq $VERSION; then
-		checkout $1
+		# just have to checkout to the latest version commited
+		checkout $1 
 		exit 0
 	else
 		echo -n "Are you sure you want to reset ’$1’ to version $2 ? (yes/no) "
@@ -297,7 +309,7 @@ reset() {
 			# finaly we update the .latest from the versioning
 			cp "$1" ".version/$FILE.latest"
 			echo "Reset to version: $2"
-		else
+		else # not just the answer "no" but anything that is not "yes" or "y" so there is no need to pannic for a miss-click
 			echo "Nothing done."
 		fi
 	fi
@@ -347,14 +359,13 @@ amend() {
 	if test $TRY -eq 0;then
 		echo "no change to amend"
 	fi
-
-	# cmp the latest_comment and the comment to amend
-
 }
 
 
+#----------------------------------------------------------------------------
+# 						every main function's call
+#----------------------------------------------------------------------------
 
-# every main function's call
 
 if test $# -eq 0; then
 	echo "Error! no argument was given"
