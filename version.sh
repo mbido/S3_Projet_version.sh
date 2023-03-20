@@ -2,41 +2,55 @@
 
 # functions for error's managment
 
+
+# inform that a wrong number of arguments whas given 
+# then exit
+# 	$1 -> number of arguments expected
+# 	$2 -> number of arguments given
 nbArgError(){
-	# $1 -> number of arguments expected
-	# $2 -> number of arguments given
 	echo "Error! wrong number of arguments. $1 argument expected but $2 where given"
 	echo 'Enter "./version.sh --help" for more information.'
 	exit 1
 }
 
+# inform that the file given as an argument is not a regular file or
+# it's read permission is not granted 
+# then exit
+# 	$1 -> file name
 notRegularFileError(){
-	# $1 -> file name
 	echo "Error! $1 is not a regular file or read permission is not granted."
 	echo 'Enter "./version.sh --help" for more information.'
 	exit 1
 }
 
+# inform that a commentary that needed to be not empty is in fact empty 
+# then exit
 emptyCommentError(){
 	echo "Error! commentary is empty"
 	echo 'Enter "./version.sh --help" for more information.'
 	exit 1
 }
 
+# inform that the commentary given as an argument is on multiple ones instead of one
+# then exit
+# 	$1 -> string
 notInlineCommentError(){
-	# $1 -> string
 	echo "Error! $1 is not a one line commentary"
 	echo 'Enter "./version.sh --help" for more information.'
 	exit 1
 }
 
-noversioningDirectoryError(){
+
+# inform that the '.version' directory do not exist
+noVersioningDirectoryError(){
 	echo "Error! '.version' directory was not found"
 	exit 1
 }
 
+
+# inform that the file given as an argument is not in the versioning directory (.version)
+# 	$1 -> file that should have been in versioning
 noFileInVersioningError(){
-	# $1 -> file name that should have been in versioning
 	echo "Error! unable to find '$1' file in versioning"
 	echo 'Enter "./version.sh --help" for more information.'
 	exit 1
@@ -44,6 +58,7 @@ noFileInVersioningError(){
 
 # main functions
 
+# display on its standard output the man page of the version.sh command
 help() {
 	echo 'Usage:
 \t./version.sh --help
@@ -76,6 +91,15 @@ help() {
 ./version.sh rm FILE
 \tDeletes all versions of a file under versioning'
 }
+
+
+# start a versioning on a file given as an argument and save a comment also given in a log file
+#
+# the file musn't be in the versioning directory (.version)
+# the comment need to not be empty and on one line
+#
+# 	$1 -> the file in question
+# 	$2 -> the comment in question
 add() {
 	FILE=${1##*/}
 	if ! test -f $1 -a -r $1; then #EXIT
@@ -100,10 +124,15 @@ add() {
 	cp "$1" ".version/$FILE.latest"
 }
 
+# remove a file from the versioning directory (.version)
+#
+# the file need to exist in versioning
+#
+#	$1 -> the file in question
 rmInternal() {
 	FILE=${1##*/}
 	if ! test -d .version; then #EXIT
-		noversioningDirectoryError
+		noVersioningDirectoryError
 	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then #EXIT
 		noFileInVersioningError $FILE
 	fi
@@ -119,10 +148,18 @@ rmInternal() {
 	fi
 }
 
+# commit a new version of a file with a comment or do nothing if the file has not changed from
+# the latest saved version
+#
+# the file need to exist in versioning
+# the comment need to not be empty and on one line
+#
+# 	$1 -> the file in question
+# 	$2 -> the comment in question
 commit() {
 	FILE=${1##*/}
 	if ! test -d .version; then #EXIT
-		noversioningDirectoryError
+		noVersioningDirectoryError
 	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then #EXIT
 		noFileInVersioningError $FILE
 	elif cmp ".version/$FILE.latest" "$1" >/dev/null 2>&1; then
@@ -148,10 +185,15 @@ commit() {
 	echo "Committed a new version : $VERSION"
 }
 
+# display on its standard output the difference between the file given as an argument and its latest version in versioning
+#
+# the file need to exist in versioning
+#
+# 	$1 -> the file in question
 diffInternal() {
 	FILE=${1##*/}
 	if ! test -d .version; then #EXIT
-		noversioningDirectoryError
+		noVersioningDirectoryError
 	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then #EXIT
 		noFileInVersioningError $FILE
 	fi
@@ -159,10 +201,18 @@ diffInternal() {
 	diff -u ".version/$FILE.latest" "$1"
 }
 
+# put the file given as an argument to specific version
+# do not remove any version from versioning
+#
+# the file need to exist in versioning
+# the version number must be less or equal than the latest version number
+#
+# 	$1 -> the file in question
+# 	$2 -> the version in question
 checkout() {
 	FILE=${1##*/}
 	if ! test -d .version; then #EXIT
-		noversioningDirectoryError
+		noVersioningDirectoryError
 	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then #EXIT
 		noFileInVersioningError $FILE
 	elif test $# -eq 1; then
@@ -186,20 +236,32 @@ checkout() {
 	fi
 }
 
+# display  on its standard output the log file of the file given as an argument
+#
+# the file need to exist in versioning
+#
+# 	$1 -> the file in question
 log() {
 	FILE=${1##*/}
 	if ! test -d .version; then #EXIT
-		noversioningDirectoryError
+		noVersioningDirectoryError
 	elif ! ls ".version/$FILE.log" >/dev/null 2>&1; then #EXIT
 		noFileInVersioningError $FILE
 	fi
 	awk '{print NR" : "$0}' .version/$FILE.log
 }
 
+# reset the file given as an argument to a specific version (similar to checkout) and remove every more recent versions
+#
+# the file need to exist in versioning
+# the version number must be less or equal than the latest version number
+#
+# 	$1 -> the file in question
+# 	$2 -> the version in question
 reset() {
 	FILE=${1##*/}
 	if ! test -d .version; then #EXIT
-		noversioningDirectoryError
+		noVersioningDirectoryError
 	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then #EXIT
 		noFileInVersioningError $FILE
 	fi
@@ -241,11 +303,18 @@ reset() {
 	fi
 }
 
+# alows to modifie the latest commit by changing its comment in the log file or (inclusive) the version itself
+#
+# the file need to exist in versioning
+# the comment need to not be empty and on one line
+#
+# 	$1 -> the file in question
+# 	$2 -> the comment in question
 amend() {
 	FILE=${1##*/}
 	TRY=0
 	if ! test -d .version; then #EXIT
-		noversioningDirectoryError
+		noVersioningDirectoryError
 	elif ! ls ".version/$FILE.1" >/dev/null 2>&1; then #EXIT
 		noFileInVersioningError $FILE
 	fi
@@ -282,6 +351,10 @@ amend() {
 	# cmp the latest_comment and the comment to amend
 
 }
+
+
+
+# every main function's call
 
 if test $# -eq 0; then
 	echo "Error! no argument was given"
