@@ -1,8 +1,8 @@
 #!/bin/dash
 
-#----------------------------------------------------------------------------
-# 						functions for error's managment
-#----------------------------------------------------------------------------
+#----------------------------------------------------------------------------#
+# 						functions for error's managment						 #
+#----------------------------------------------------------------------------#
 
 # inform that a wrong number of arguments whas given 
 # then exit
@@ -57,9 +57,9 @@ noFileInVersioningError(){
 	exit 1
 }
 
-#----------------------------------------------------------------------------
-# 							    main functions
-#----------------------------------------------------------------------------
+#----------------------------------------------------------------------------#
+# 							    main functions								 #
+#----------------------------------------------------------------------------#
 
 
 # display on its standard output the man page of the version.sh command
@@ -331,9 +331,11 @@ amend() {
 		noFileInVersioningError $FILE
 	fi
 	COMMENT="$2"
-	# getting the number of the latest version of the file and comment
+	# getting the name of the latest version of the file
 	latest_version=$(ls -1 ".version/$FILE."* | sort -n | tail -3 | head -n 1)
+	# getting the latest comment in the log file
 	latest_comment=$(cat .version/$FILE.log | tail -n 1 | grep -o "'[^']*'" | sed "s/'//g")
+	# getting the number of the latest version of the file
 	latest_version_number=$(basename "$latest_version" | cut -d '.' -f 3)
 	
 	# cmp between the latest_file and the file to amend
@@ -342,14 +344,16 @@ amend() {
 		cp "$1" ".version/$FILE.latest"
 		TRY=1
 	fi
+	# cmp between the latest comment in the log and the comment to amend
 	if test "$2" != "$latest_comment"; then
 		date=$(date -R)
 		NEW_COMMENT=$(echo $2 | sed -E 's/\t//g' | sed -E 's/^ *//' | sed -E 's/ *$//')
 		if test $(echo "$NEW_COMMENT" | wc -l) -gt 1; then #EXIT
 			notInlineCommentError $NEW_COMMENT
-		elif ! test -n "$NEW_COMMENT"; then
+		elif ! test -n "$NEW_COMMENT"; then #EXIT
 			emptyCommentError
 		fi
+		# erase the latest comment in the file to add the new one instead
 		sed -i '$ d' .version/$FILE.log
 		NEW_COMMENT="$date '$NEW_COMMENT'"
 		echo "$NEW_COMMENT" >>.version/$FILE.log
@@ -362,9 +366,9 @@ amend() {
 }
 
 
-#----------------------------------------------------------------------------
-# 						every main function's call
-#----------------------------------------------------------------------------
+#----------------------------------------------------------------------------#
+# 						every main function's call 							 #
+#----------------------------------------------------------------------------#
 
 
 if test $# -eq 0; then
